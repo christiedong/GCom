@@ -1,6 +1,7 @@
 from flask import Flask
 from flask import request
 from redis import Redis
+from gimbocontrol import *
 
 import traceback
 import json
@@ -16,7 +17,7 @@ class MyReturn:
     code = -1
     message = ""
 
-    def __init__(self,code,message):
+    def __init__(self, code, message):
         self.code = code
         self.message = message
 
@@ -25,49 +26,7 @@ class MyReturn:
         return json.dumps(ret)
 
 
-def myHexStr(indata):
-    tmphex = hex(int(indata))[2:]
-    if len(tmphex)%2 != 0:
-        tmphex='0'+tmphex
-    return tmphex
 
-
-class BaseCommand:
-    devId = ''
-    devCommandType = ''
-
-    def __init__(self, devId, devCommandType):
-        self.devId = devId
-        self.devCommandType = devCommandType
-
-    def toHexString(self):
-        pass
-
-
-class GimboMoveCommand(BaseCommand):
-    def __init__(self, devId, cmd1, cmd2, data1, data2):
-        super.__init__(devId,'GIMBOMOVE')
-        self.start = 0xFF
-        self.address = 0x01
-        self.cmd1 = cmd1
-        self.cmd2 = cmd2
-        self.data1 = data1
-        self.data2 = data2
-        self.checksum = (self.address + self.cmd1 + self.cmd2 + self.data1 + self.data2) & 0xFF
-
-    def toHexString(self):
-        """
-        return command string in hex format without 0x
-        :return:
-        """
-        ret = '%s%s%s%s%s%s%s' % (myHexStr(self.start),
-                                  myHexStr(self.address),
-                                  myHexStr(self.cmd1),
-                                  myHexStr(self.cmd2),
-                                  myHexStr(self.data1),
-                                  myHexStr(self.data2),
-                                  myHexStr(self.checksum))
-        return ret
 
 
 def getCmdFromQ(devId):

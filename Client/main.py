@@ -5,11 +5,12 @@ from urllib import request,parse
 import requests
 
 # interval between upload in ms
-interval = 1000
+interval = 2000
 # default device ID
 devId = '001'
 # url of gcom
-url = 'http://140.143.87.154:8889/upload'
+# url = 'http://140.143.87.154:8889/upload'
+url = 'http://localhost:8889/upload'
 
 
 class MyReturn():
