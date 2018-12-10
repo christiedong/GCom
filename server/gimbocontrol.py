@@ -202,7 +202,7 @@ if __name__ == '__main__':
     stopcmd = GimboStopCommand(stopparam)
 
 
-    r = Redis(host='localhost', port=6379, db=1, decode_responses=True)
+    r = Redis(host='140.143.87.154', port=6379, db=1, decode_responses=True)
     r.lpush('001',stepmovecmd._toString())
     r.lpush('001', leftmovecmd._toString())
     r.lpush('001', rightmovecmd._toString())
