@@ -8,7 +8,8 @@ import time
 
 
 app = Flask(__name__)
-
+rstat = Redis('localhost', 6379, db=0, decode_responses=True)
+rcmd = Redis('localhost', 6379, db=1, decode_responses=True)
 
 
 class MyReturn:
@@ -26,7 +27,7 @@ class MyReturn:
 
 def myHexStr(indata):
     tmphex = hex(int(indata))[2:]
-    if len(tmphex)%2 !=0:
+    if len(tmphex)%2 != 0:
         tmphex='0'+tmphex
     return tmphex
 
@@ -76,11 +77,14 @@ def getCmdFromQ(devId):
     :return:
     """
     # command Q db
-    r = Redis('localhost', 6379, db=1, decode_responses=True)
-    if r.type(devId) != 'list':
-        raise Exception('Wrong command key type!')
-    newcmd = r.rpop(devId)
-    return newcmd
+    # r = Redis('localhost', 6379, db=1, decode_responses=True)
+    if rcmd.exists(devId) == 0:
+        return None
+    else:
+        if rcmd.type(devId) != 'list':
+            raise Exception('Wrong command key type!')
+        newcmd = rcmd.rpop(devId)
+        return newcmd
 
 
 
@@ -95,8 +99,8 @@ def save2redis(devId, devStat):
     """
     if devId is None or devId=='':
         raise Exception('Invalid Device ID.')
-    r = Redis('localhost', 6379, db=0, decode_responses=True)
-    r.set(devId,devStat)
+    # r = Redis('localhost', 6379, db=0, decode_responses=True)
+    rstat.set(devId, devStat)
     return
 
 
@@ -108,8 +112,8 @@ def debugRedis(devId):
     """
     if devId is None or devId=='':
         raise Exception('Invalid Device ID.')
-    r = Redis('localhost', 6379, db=0, decode_responses=True)
-    ret = r.get(devId)
+    # r = Redis('localhost', 6379, db=0, decode_responses=True)
+    ret = rstat.get(devId)
     print(ret)
     return ret
 
@@ -131,7 +135,7 @@ def upload():
         else:
             ret = MyReturn('200', 'Data saved. ' + debugRedis(devId))
     except Exception as e:
-        return MyReturn(100, 'Error:'+str(traceback.format_exc())).toJson()
+        return MyReturn('100', 'Error:'+str(traceback.format_exc())).toJson()
     elapsed = time.time()-timein
     print('Elapsed:' + str(round(elapsed)))
     return ret.toJson()
