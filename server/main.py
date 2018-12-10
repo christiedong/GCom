@@ -7,12 +7,14 @@ import json
 import time
 
 
-
 app = Flask(__name__)
 
-class MyReturn():
+
+
+class MyReturn:
     code = -1
     message = ""
+
     def __init__(self,code,message):
         self.code = code
         self.message = message
@@ -21,21 +23,28 @@ class MyReturn():
         ret = {'code': self.code, 'message': self.message}
         return json.dumps(ret)
 
+
 def myHexStr(indata):
     tmphex = hex(int(indata))[2:]
     if len(tmphex)%2 !=0:
         tmphex='0'+tmphex
     return tmphex
 
-class BaseCommand():
+
+class BaseCommand:
     devId = ''
     devCommandType = ''
-    def __init__(self,devId, devCommandType):
+
+    def __init__(self, devId, devCommandType):
         self.devId = devId
         self.devCommandType = devCommandType
 
+    def toHexString(self):
+        pass
+
+
 class GimboMoveCommand(BaseCommand):
-    def __init__(self,devId,cmd1,cmd2,data1,data2):
+    def __init__(self, devId, cmd1, cmd2, data1, data2):
         super.__init__(devId,'GIMBOMOVE')
         self.start = 0xFF
         self.address = 0x01
@@ -45,12 +54,33 @@ class GimboMoveCommand(BaseCommand):
         self.data2 = data2
         self.checksum = (self.address + self.cmd1 + self.cmd2 + self.data1 + self.data2) & 0xFF
 
-    def toCmdHexString(self):
-        ret = '0x%s%s%s%s%s%s%s' % (myHexStr(self.start),myHexStr(self.address),myHexStr(self.cmd1),myHexStr(self.cmd2),myHexStr(self.data1),myHexStr(self.data2),myHexStr(self.checksum))
+    def toHexString(self):
+        """
+        return command string in hex format without 0x
+        :return:
+        """
+        ret = '%s%s%s%s%s%s%s' % (myHexStr(self.start),
+                                  myHexStr(self.address),
+                                  myHexStr(self.cmd1),
+                                  myHexStr(self.cmd2),
+                                  myHexStr(self.data1),
+                                  myHexStr(self.data2),
+                                  myHexStr(self.checksum))
         return ret
 
-    def toCmdBytes(self):
 
+def getCmdFromQ(devId):
+    """
+    get cmd from redis queue
+    :param devId:
+    :return:
+    """
+    # command Q db
+    r = Redis('localhost', 6379, db=1, decode_responses=True)
+    if r.type(devId) != 'list':
+        raise Exception('Wrong command key type!')
+    newcmd = r.rpop(devId)
+    return newcmd
 
 
 
@@ -65,9 +95,10 @@ def save2redis(devId, devStat):
     """
     if devId is None or devId=='':
         raise Exception('Invalid Device ID.')
-    r = Redis('localhost',6379)
+    r = Redis('localhost', 6379, db=0, decode_responses=True)
     r.set(devId,devStat)
     return
+
 
 def debugRedis(devId):
     """
@@ -77,10 +108,11 @@ def debugRedis(devId):
     """
     if devId is None or devId=='':
         raise Exception('Invalid Device ID.')
-    r = Redis('localhost',6379,decode_responses=True)
+    r = Redis('localhost', 6379, db=0, decode_responses=True)
     ret = r.get(devId)
     print(ret)
     return ret
+
 
 @app.route('/upload', methods=['POST'])
 def upload():
@@ -90,21 +122,19 @@ def upload():
         devId = request.form.get('devId')
         devStat = request.form.get('devStat')
         # Save status to redis
-        save2redis(devId,devStat)
+        save2redis(devId, devStat)
         # Get command from queue
-
+        gimboCmd = getCmdFromQ(devId)
         # Return
-        ret = MyReturn('200','Data saved. '+debugRedis(devId))# debugRedis(devId)
+        if gimboCmd is not None:
+            ret = MyReturn('201', gimboCmd)
+        else:
+            ret = MyReturn('200', 'Data saved. ' + debugRedis(devId))
     except Exception as e:
-        return MyReturn(100,'Error:'+str(traceback.format_exc())).toJson()
+        return MyReturn(100, 'Error:'+str(traceback.format_exc())).toJson()
     elapsed = time.time()-timein
     print('Elapsed:' + str(round(elapsed)))
     return ret.toJson()
-
-
-
-
-
 
 
 if __name__ == '__main__':
