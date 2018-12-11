@@ -16,6 +16,7 @@ url = 'http://140.143.87.154:8889/upload'
 # command execution que
 Q=[]
 lock = threading.Lock()
+devStatus = []
 
 
 class MyReturn():
@@ -128,17 +129,19 @@ def cmdSchedule():
         # 1 从命令队列中取出第一个元素，并删除队列第一个元素
         p = Q[0]['priority']
         s = Q[0]['seris']
-        Q = Q[1:] if len(Q)>1 else []
+        Q = Q[1:] if len(Q) > 1 else []
         lock.release()
         # 2 循环执行seris中的每个命令字
         for ele in s:
             lock.acquire()
-            if len(Q)>0 and Q[0]['priority'] < p:
+            if len(Q) > 0 and Q[0]['priority'] < p:
                 print('Quit current cmd...')
                 break
             lock.release()
             executecmd(ele)
             # print('Executing ' + ele + '...')
+        # 3 获取电机的当前位置，并刷新缓存
+        
         time.sleep(interval/10000)
 
     # 4 在循环结束或delay过程中查询是否有高于当前命令优先级的命令到来，如果有，则退出当前命令执行，去执行高优先级
