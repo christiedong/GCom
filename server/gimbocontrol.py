@@ -181,8 +181,8 @@ class GimboStepMoveCommand(BaseCommand):
 
 
 if __name__ == '__main__':
-    leftmoveparam = [{'address':0x01, 'direction':'left', 'speed':0x3F}]
-    rightmoveparam = [{'address':0x01, 'direction':'right', 'speed':0x3F}]
+    leftmoveparam = [{'address': 0x01, 'direction': 'left', 'speed': 0x3F}]
+    rightmoveparam = [{'address': 0x01, 'direction': 'right', 'speed': 0x3F}]
     upmoveparam = [{'address': 0x01, 'direction': 'up', 'speed': 0x3F}]
     downmoveparam = [{'address': 0x01, 'direction': 'down', 'speed': 0x3F}]
 
